@@ -38,12 +38,10 @@ var db=null;
 var cnt_all=0;
 var db_title="1";
 
-
 function changeTitle() {
   var o=document.getElementById("DbTitle");
   if(o.value && o.value!="") {
     db_title=o.value;
-    console.log("o:"+o+" v:"+o.value);
     reopen();
   }
 }
@@ -86,13 +84,8 @@ function reopen() {
     o.value=db_title;
 
     var openRequest = indexedDB.open("gad_db2",1);
-
-    console.log("Open "+db_title);
-
     openRequest.onupgradeneeded = function(e) {
         var thisDB = e.target.result;
-        console.log("running onupgradeneeded");
-
         if(!thisDB.objectStoreNames.contains("people")) {
             var peopleOS = thisDB.createObjectStore("people",
                 {autoIncrement:true});
@@ -103,10 +96,7 @@ function reopen() {
         }
     }
     openRequest.onsuccess = function(e) {
-        console.log("running onsuccess");
-
         db = e.target.result;
-
         if(!db.objectStoreNames.contains("people")) {
             var peopleOS = thisDB.createObjectStore("people",
                 {autoIncrement:true});
@@ -115,11 +105,10 @@ function reopen() {
             var questionOS = thisDB.createObjectStore("questions",
                 {autoIncrement:true});
         }
-        drawAll();
+        drawPeople();
+        drawQuestions();
     }
     openRequest.onerror = function(e) {
-        console.log("onerror!");
-        console.dir(e);
     }
 }
 
@@ -135,15 +124,11 @@ function addPerson() {
         date:new Date().getTime()
     }
     var request = store.add(person);
-
     request.onerror = function(e) {
-        console.log("Error",e.target.error.name);
     }
     request.onsuccess = function(e) {
-        console.log("P added to "+db_title);
         drawPeople();
     }
-
 }
 
 function addQuestion(txt) {
@@ -156,12 +141,9 @@ function addQuestion(txt) {
         date:new Date().getTime()
     }
     var request = store.add(question);
-
     request.onerror = function(e) {
-        console.log("Error",e.target.error.name);
     }
     request.onsuccess = function(e) {
-        console.log("Q added to "+db_title);
         drawQuestions();
     }
 }
@@ -174,12 +156,6 @@ function clearAll() {
   store = transaction.objectStore("questions");
   store.clear();
   reopen();
-}
-
-function drawAll() {
-  console.log("drawAll:"+db_title);
-  drawPeople();
-  drawQuestions();
 }
  
 function formatDateTime(dt) {
@@ -204,10 +180,8 @@ function drawPeople() {
   request.onsuccess = function(event) {
       var cursor=request.result||event.result;
       if(!cursor) return;
-      if(cursor.value.title==db_title) 
-      {
+      if(cursor.value.title==db_title) {
       cnt_all++;
-      //console.log("P:'"+cursor.value.title+"' "+cursor.value.name+" cnt:"+cnt_all);
       var element=document.createElement("div");
       element.id="ee"+cnt_all;
       element.value=cursor.value.name;
@@ -226,9 +200,7 @@ function drawQuestions() {
   request.onsuccess = function(event) {
       var cursor=request.result||event.result;
       if(!cursor) return;
-      if(cursor.value.title==db_title)
-      {
-      //console.log("Q:'"+cursor.value.title+"' "+cursor.value.name);
+      if(cursor.value.title==db_title)  {
       var element=document.createElement("div");
       element.textContent=formatDateTime(cursor.value.date)+" "+cursor.value.name;
       o.appendChild(element);
@@ -238,10 +210,6 @@ function drawQuestions() {
 }
 </script>
 <style>
-BODY {
-    background-col: black;
-    col: white;
-}
 DIV.staticstars {
     background:#000 url(star.gif) repeat top center;
     background-attachment: fixed;
@@ -295,9 +263,7 @@ function create1(id) {
 function createStars(){
     var o = document.getElementById("stars");
     for (var i = 0; i < 200; i++)
-    {
       o.appendChild(create1(i));
-    }
 }
 </script>
 <div class="staticstars" id="stars"></div>
