@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<meta http-equiv="content-type" content="text/html; charset=windows-1251" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <script type="text/javascript"src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
 <title>Special from T.</title>
 <style>
@@ -28,7 +28,7 @@
 </div>
 <hr>
 <input type="text" style="font-size:20px" size=40 id="question" placeholder="Question">
-<button onclick="gad();" style="height:32px;">?????</button>
+<button onclick="gad();" style="height:32px;">? ? ?</button>
 <hr>
 <div id="questionList"></div>
 </div>
@@ -76,6 +76,7 @@ function idbOK() {
 }
 
 $(document).ready(function() {
+  createStars();
   reopen();
 });
 
@@ -236,6 +237,70 @@ function drawQuestions() {
    };
 }
 </script>
+<style>
+BODY {
+    background-col: black;
+    col: white;
+}
+DIV.staticstars {
+    background:#000 url(star.gif) repeat top center;
+    background-attachment: fixed;
+    position: fixed;
+    top:    0;
+    left:   0;
+    right:  0;
+    bottom: 0;
+    float: left;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: -1;
+}
+DIV.star {
+    -webkit-animation: star 10s infinite; animation: star 10s infinite;
+}
+@-webkit-keyframes star {
+    0% {opacity: 1;}
+    2% {opacity: 0.3;}
+    4% {opacity: 1;}
+}
+@keyframes star {
+    0% {opacity: 1;}
+    2% {opacity: 0.3;}
+    4% {opacity: 1;}
+}
+</style>
+
+<script>
+function create1(id) {
+    const maxSz=7;
+    var delay = Number((Math.random()*10000).toFixed())
+    var size = 1 + Number((Math.random()*(maxSz+1)).toFixed());
+    var dv = document.createElement('div');
+    dv.className = "star"
+    dv.style.position = "absolute";
+    dv.style.top = (Math.random()*99)+"%";
+    dv.style.left = (Math.random()*99)+"%";
+    dv.style.width  = size + "px";
+    dv.style.height = size + "px";
+    const col = "yellow";
+    dv.style.background = col;
+    dv.style.background = "-webkit-radial-gradient(center, ellipse cover, " + col + " 0%, rgba(0,0,0,0) 100%)";
+    dv.style.background = "radial-gradient(ellipse at center, " + col + " 0%, rgba(0,0,0,0) 100%)";
+    dv.style.filter = "progid:DXImageTransform.Microsoft.Alpha(opacity=100, finishopacity=0, style=2)";
+    dv.style.animationDelay = delay + "ms";
+    dv.style.WebkitAnimationDelay = delay + "ms";
+    return dv;
+}
+function createStars(){
+    var o = document.getElementById("stars");
+    for (var i = 0; i < 200; i++)
+    {
+      o.appendChild(create1(i));
+    }
+}
+</script>
+<div class="staticstars" id="stars"></div>
 
 </body>
 </html>
