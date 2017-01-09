@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1251" />
+<script type="text/javascript"src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+<title>Рождественское Гадание. Special for T.</title>
+<style>
+   body {
+    background-image: url(bg.jpg);
+    background-color: black;
+    background-size: cover;
+    color: lightgreen;
+    font-size:26px;
+   }
+</style>
+</head>
+<body>
+<div class=galaxy>
+<h3>Рождественское Гадание&nbsp;
+<input type="text" size=2 style="font-size:20px" id="DbTitle" placeholder="Title">
+<button onclick="changeTitle();">Выбрать</button>&nbsp; Special for T. </h3>
+<div id="peopleList">Список пуст. Добавьте для гадания</div>
+<div id="peopleAdd" style="display:none;">
+<input type="text" style="font-size:20px" size=80 id="personName" placeholder="Name">
+<button onclick="addPerson();">Добавить</button>
+</div>
+<div id="btnAdd">
+<button onclick="switchAdd();">+</button>
+</div>
+<hr>
+<input type="text" style="font-size:20px" size=80 id="question" placeholder="Question">
+<button onclick="gad();">?????</button>
+<hr>
+<div id="questionList"></div>
+</div>
+<script>
+
+var db=null;
+var cnt_all=0;
+var db_title="1";
+
+
+function changeTitle() {
+  var o=document.getElementById("DbTitle");
+  if(o.value && o.value!="") {
+    db_title=o.value;
+    console.log("o:"+o+" v:"+o.value);
+    reopen();
+  }
+}
+
+function gad() {
+  var n=Math.round(0+Math.random()*(cnt_all));
+  var name="- - -";
+  var question=document.getElementById("question").value;
+  var o=document.getElementById("ee"+n);
+  if(o) name=o.value;
+  var txt=question+" ? "+name;
+  addQuestion(txt);
+  alert(txt);
+}
+
+function switchAdd() {
+ var o=document.getElementById('peopleAdd');
+ var o2=document.getElementById('btnAdd');
+ if(o.style.display=='none') {
+   o.style.display='block'; 
+   o2.style.display='none';
+  } else {
+   o.style.display='none';
+   o2.style.display='block'; 
+  }
+}
+
+function idbOK() {
+  return "indexedDB" in window;
+}
+
+$(document).ready(function() {
+  reopen();
+});
+
+function reopen() {
+    if(!idbOK()) return;
+    var o=document.getElementById("DbTitle");
+    o.value=db_title;
+
+    var openRequest = indexedDB.open("gad_db2",1);
+
+    console.log("Open "+db_title);
+
+    openRequest.onupgradeneeded = function(e) {
+        var thisDB = e.target.result;
+        console.log("running onupgradeneeded");
+
+        if(!thisDB.objectStoreNames.contains("people")) {
+            var peopleOS = thisDB.createObjectStore("people",
+                {autoIncrement:true});
+        }
+        if(!thisDB.objectStoreNames.contains("questions")) {
+            var peopleOS = thisDB.createObjectStore("questions",
+                {autoIncrement:true});
+        }
+    }
+    openRequest.onsuccess = function(e) {
+        console.log("running onsuccess");
+
+        db = e.target.result;
+
+        if(!db.objectStoreNames.contains("people")) {
+            var peopleOS = thisDB.createObjectStore("people",
+                {autoIncrement:true});
+        }
+        if(!db.objectStoreNames.contains("questions")) {
+            var questionOS = thisDB.createObjectStore("questions",
+                {autoIncrement:true});
+        }
+        drawAll();
+    }
+    openRequest.onerror = function(e) {
+        console.log("onerror!");
+        console.dir(e);
+    }
+}
+
+function addPerson() {
+    var o=document.getElementById("personName");
+    var name = o.value;
+    switchAdd();
+    var transaction = db.transaction(["people"],"readwrite");
+    var store = transaction.objectStore("people");
+    var person = {
+        name:name,
+        title:db_title,
+        date:new Date().getTime()
+    }
+    var request = store.add(person);
+
+    request.onerror = function(e) {
+        console.log("Error",e.target.error.name);
+    }
+    request.onsuccess = function(e) {
+        console.log("P added to "+db_title);
+        drawPeople();
+    }
+
+}
+
+function addQuestion(txt) {
+    var name = txt;
+    var transaction = db.transaction(["questions"],"readwrite");
+    var store = transaction.objectStore("questions");
+    var question = {
+        name:name,
+        title:db_title,
+        date:new Date().getTime()
+    }
+    var request = store.add(question);
+
+    request.onerror = function(e) {
+        console.log("Error",e.target.error.name);
+    }
+    request.onsuccess = function(e) {
+        console.log("Q added to "+db_title);
+        drawQuestions();
+    }
+}
+
+function clearAll() {
+  var transaction = db.transaction(["people"],"readwrite");
+  var store = transaction.objectStore("people");
+  store.clear();
+  transaction = db.transaction(["questions"],"readwrite");
+  store = transaction.objectStore("questions");
+  store.clear();
+  reopen();
+}
+
+function drawAll() {
+  console.log("drawAll:"+db_title);
+  drawPeople();
+  drawQuestions();
+}
+ 
+function formatDateTime(dt) {
+  date=new Date();
+  date.setTime(dt);
+  var year=date.getFullYear();
+  var month="0"+date.getMonth()+1;
+  var day="0"+date.getDate();
+  var hours="0"+date.getHours();
+  var minutes="0"+date.getMinutes();
+
+  return day.substr(-2)+"-"+month.substr(-2)+"-"+year+" "+
+    hours.substr(-2) + ':'+minutes.substr(-2);
+}
+
+function drawPeople() {
+  var o=document.getElementById("peopleList");
+  o.innerHTML="" ;
+  cnt_all=0;
+  var transaction=db.transaction(["people"],"readonly");
+  var request=transaction.objectStore("people").openCursor();
+  request.onsuccess = function(event) {
+      var cursor=request.result||event.result;
+      if(!cursor) return;
+      if(cursor.value.title==db_title) 
+      {
+      cnt_all++;
+      //console.log("P:'"+cursor.value.title+"' "+cursor.value.name+" cnt:"+cnt_all);
+      var element=document.createElement("div");
+      element.id="ee"+cnt_all;
+      element.value=cursor.value.name;
+      element.textContent = cursor.value.name;
+      o.appendChild(element);
+      }
+      cursor.continue();
+   };
+}
+
+function drawQuestions() {
+  var o=document.getElementById("questionList");
+  o.innerHTML="";
+  var transaction=db.transaction(["questions"],"readonly");
+  var request=transaction.objectStore("questions").openCursor();
+  request.onsuccess = function(event) {
+      var cursor=request.result||event.result;
+      if(!cursor) return;
+      if(cursor.value.title==db_title)
+      {
+      //console.log("Q:'"+cursor.value.title+"' "+cursor.value.name);
+      var element=document.createElement("div");
+      element.textContent=formatDateTime(cursor.value.date)+" "+cursor.value.name;
+      o.appendChild(element);
+      }
+      cursor.continue();
+   };
+}
+</script>
+
+</body>
+</html>
