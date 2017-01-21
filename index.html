@@ -12,31 +12,105 @@
     color: lightgreen;
     font-size:26px;
    }
+
+ul.tab {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+ul.tab li {float: left;}
+ul.tab li a {
+    display: inline-block;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    transition: 0.3s;
+    font-size: 17px;
+}
+ul.tab li a:hover {background-color: #ddd;}
+ul.tab li a:focus, .active {background-color: #ccc;}
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
 </style>
 </head>
 <body onload="init();">
 <div class=galaxy>
-<h3>&nbsp;<input type="text" size=2 style="font-size:20px" id="DbTitle" placeholder="Title">
-<button onclick="changeTitle();" style="height:32px;">Ok</button>&nbsp; Special from T. </h3>
+<h3>&nbsp; Special from T. </h3>
+
+<ul class="tab">
+  <li><a href="javascript:void(0)" id="editSel" class="tablinks" onclick="editMode();">Edit</a></li>
+  <li><a href="javascript:void(0)" id="playSel" class="tablinks" onclick="playMode();">Play</a></li>
+  <li><a href="javascript:void(0)" id="playSel" class="tablinks" onclick="dbPrev();"> < </a></li>
+  <li><input type="text" size=1 style="font-size:27px;" id="DbTitle" placeholder="Title" onchange="changeTitle()"></li>
+  <li><a href="javascript:void(0)" id="playSel" class="tablinks" onclick="dbNext();"> > </a></li>
+</ul>
+
+
+<div id="editMode">
 <div id="peopleList">Empty</div>
-<div id="peopleAdd" style="display:none;">
-<input type="text" style="font-size:20px" size=40 id="personName" placeholder="Name">
-<button onclick="addPerson();" style="height:32px;">&nbsp;&nbsp;+&nbsp;&nbsp;</button>
+<input type="text" style="font-size:20px" size=40 id="personName" placeholder="Add Name" onchange="addPerson()">
 </div>
-<div id="btnAdd">
-<button onclick="switchAdd();" style="height:32px;">&nbsp;&nbsp;+&nbsp;&nbsp;</button>
-</div>
+<div>
 <hr>
-<input type="text" style="font-size:20px" size=40 id="question" placeholder="Question">
-<button onclick="gad();" style="height:32px;">? ? ?</button>
+<div id="playMode">
+<input type="text" style="font-size:20px" size=40 id="question" placeholder="Ask Question"  onchange="gad()">
 <hr>
 <div id="questionList"></div>
 </div>
+</div>
 <script>
-
 var db=null;
 var cnt_all=0;
 var db_title="1";
+var m_mode='edit';
+
+function dbPrev() {
+  var n=eval(db_title);
+ if(n!=1) {
+   n--;
+   db_title=n.toString();
+   document.getElementById('DbTitle').value=db_title;
+   changeTitle();
+ }
+}
+function dbNext() {
+  var n=eval(db_title);
+ if(n!=9) {
+   n++;
+   db_title=n.toString();
+   document.getElementById('DbTitle').value=db_title;
+   changeTitle();
+ }
+}
+
+function playMode() {
+ var o1=document.getElementById('editMode');
+ var o2=document.getElementById('playMode');
+ o1.style.display='none';
+ o2.style.display='block';
+ m_mode='play';
+ document.getElementById('playSel').style.backgroundColor ="gray";
+ document.getElementById('editSel').style.backgroundColor ="#f1f1f1";
+}
+
+function editMode() {
+ var o1=document.getElementById('editMode');
+ var o2=document.getElementById('playMode');
+ o1.style.display='block';
+ o2.style.display='none';
+ m_mode='edit';
+ document.getElementById('playSel').style.backgroundColor ="#f1f1f1";
+ document.getElementById('editSel').style.backgroundColor ="gray";
+}
 
 function changeTitle() {
   var o=document.getElementById("DbTitle");
@@ -45,11 +119,11 @@ function changeTitle() {
     reopen();
   }
 }
-
 function gad() {
   var n=Math.round(0+Math.random()*(cnt_all));
   var name="- - -";
   var question=document.getElementById("question").value;
+  document.getElementById("question").value="";
   var o=document.getElementById("ee"+n);
   if(o) name=o.value;
   var txt=question+" ? "+name;
@@ -57,65 +131,51 @@ function gad() {
   alert(txt);
 }
 
-function switchAdd() {
- var o=document.getElementById('peopleAdd');
- var o2=document.getElementById('btnAdd');
- if(o.style.display=='none') {
-   o.style.display='block'; 
-   o2.style.display='none';
-  } else {
-   o.style.display='none';
-   o2.style.display='block'; 
-  }
-}
-
 function idbOK() {
   return "indexedDB" in window;
 }
-
 function init() {
+  var o=document.getElementById("editSel");
+  o.click();
+  editMode();
   createStars();
   reopen();
 };
+function checkDB(thisDB) {
+    if(!thisDB.objectStoreNames.contains("people")) {
+        var peopleOS = thisDB.createObjectStore("people",
+            {autoIncrement:true});
+        peopleOS.createIndex("by_name","name", {unique:false});
+    }
+    if(!thisDB.objectStoreNames.contains("questions")) {
+        var questionOS = thisDB.createObjectStore("questions",
+            {autoIncrement:true});
+        questionOS.createIndex("by_name","name", {unique:false});
+    }
+}
 
 function reopen() {
     if(!idbOK()) return;
     var o=document.getElementById("DbTitle");
     o.value=db_title;
-
     var openRequest = indexedDB.open("gad_db2",1);
     openRequest.onupgradeneeded = function(e) {
         var thisDB = e.target.result;
-        if(!thisDB.objectStoreNames.contains("people")) {
-            var peopleOS = thisDB.createObjectStore("people",
-                {autoIncrement:true});
-        }
-        if(!thisDB.objectStoreNames.contains("questions")) {
-            var peopleOS = thisDB.createObjectStore("questions",
-                {autoIncrement:true});
-        }
+        checkDB(thisDB);
     }
     openRequest.onsuccess = function(e) {
         db = e.target.result;
-        if(!db.objectStoreNames.contains("people")) {
-            var peopleOS = thisDB.createObjectStore("people",
-                {autoIncrement:true});
-        }
-        if(!db.objectStoreNames.contains("questions")) {
-            var questionOS = thisDB.createObjectStore("questions",
-                {autoIncrement:true});
-        }
+        checkDB(db);
         drawPeople();
         drawQuestions();
     }
     openRequest.onerror = function(e) {
     }
 }
-
 function addPerson() {
     var o=document.getElementById("personName");
     var name = o.value;
-    switchAdd();
+    o.value = "";
     var transaction = db.transaction(["people"],"readwrite");
     var store = transaction.objectStore("people");
     var person = {
@@ -130,7 +190,38 @@ function addPerson() {
         drawPeople();
     }
 }
+function delPerson(name) {
+    var transaction = db.transaction(["people"],"readwrite");
+    var store = transaction.objectStore("people");
+    var request=store.openCursor();
+    request.onsuccess = function(event) {
+        var cursor=request.result||event.result;
+          if(!cursor) return;
+          if(cursor.value.title==db_title && cursor.value.name==name)  {
+             console.log("remove "+cursor.value.name);
+             store.delete(cursor.key);
+            }
+          cursor.continue();
+       };
+       delQuestion(name);
+       drawPeople();
+       drawQuestions();
+}
 
+function delQuestion(name) {
+  var transaction=db.transaction(["questions"],"readwrite");
+  var store=transaction.objectStore("questions");
+  var request=store.openCursor();
+  request.onsuccess = function(event) {
+      var cursor=request.result||event.result;
+      if(!cursor) return;
+      if(cursor.value.title==db_title && cursor.value.name.indexOf(name)>0)  {
+         console.log("remove "+cursor.value.name);
+         store.delete(cursor.key);
+        }
+      cursor.continue();
+   };
+}   
 function addQuestion(txt) {
     var name = txt;
     var transaction = db.transaction(["questions"],"readwrite");
@@ -147,7 +238,6 @@ function addQuestion(txt) {
         drawQuestions();
     }
 }
-
 function clearAll() {
   var transaction = db.transaction(["people"],"readwrite");
   var store = transaction.objectStore("people");
@@ -166,11 +256,9 @@ function formatDateTime(dt) {
   var day="0"+date.getDate();
   var hours="0"+date.getHours();
   var minutes="0"+date.getMinutes();
-
   return day.substr(-2)+"-"+month.substr(-2)+"-"+year+" "+
     hours.substr(-2) + ':'+minutes.substr(-2);
 }
-
 function drawPeople() {
   var o=document.getElementById("peopleList");
   o.innerHTML="" ;
@@ -185,13 +273,12 @@ function drawPeople() {
       var element=document.createElement("div");
       element.id="ee"+cnt_all;
       element.value=cursor.value.name;
-      element.textContent = cursor.value.name;
+      element.innerHTML="<button onclick='delPerson(\""+cursor.value.name+"\")'>-</button>"+cursor.value.name;
       o.appendChild(element);
       }
       cursor.continue();
    };
 }
-
 function drawQuestions() {
   var o=document.getElementById("questionList");
   o.innerHTML="";
